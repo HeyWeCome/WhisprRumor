@@ -93,7 +93,7 @@ class BaseRunner(object):
             train_acc += pred.eq(target).cpu().float().sum().item()
             train_total += target.shape[0]
         acc = train_acc / train_total
-        logging.INFO("train epoch:{}  loss:{:.6f} acc:{:.5f}".format(epoch, np.mean(loss_list), acc))
+        logging.info("train epoch:{}  loss:{:.6f} acc:{:.5f}".format(epoch, np.mean(loss_list), acc))
         return acc, np.mean(loss_list)
 
     def test(self, model, loss_fn, data_loader, stage):
@@ -117,7 +117,7 @@ class BaseRunner(object):
 
         avg_loss = np.mean(loss_list)
         avg_acc = acc / total
-        logging.INFO("{} loss:{:.6f}, acc:{}".format(stage, avg_loss, avg_acc))
+        logging.info("{} loss:{:.6f}, acc:{}".format(stage, avg_loss, avg_acc))
         return avg_acc, avg_loss
 
     def fit(self, model, train_loader, val_loader, test_loader):
@@ -149,14 +149,14 @@ class BaseRunner(object):
                 early_stop_cnt += 1
 
             if early_stop_cnt > self.early_stop:
-                logging.INFO("Early stopping triggered.")
+                logging.info("Early stopping triggered.")
                 break
 
         # plot_learning_curve(train_loss_list, val_loss_list, test_loss_list)  # Plotting validation loss as well
 
         # Print the best validation accuracy
-        logging.INFO("Best Validation Accuracy: {:.5f}".format(best_acc))
+        logging.info("Best Validation Accuracy: {:.5f}".format(best_acc))
 
         # After training, get the test results
         final_test_acc, final_test_loss = self.test(model, loss_fn, test_dataloader, 'test')
-        logging.INFO("Final Test Accuracy: {:.5f}. Test Loss: {:.6f}".format(final_test_acc, final_test_loss))
+        logging.info("Final Test Accuracy: {:.5f}. Test Loss: {:.6f}".format(final_test_acc, final_test_loss))
