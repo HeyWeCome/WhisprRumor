@@ -105,3 +105,6 @@ venv.bak/
 
 # add
 .idea
+
+log
+embeddings
