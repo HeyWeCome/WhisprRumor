@@ -7,6 +7,7 @@
 @Description：todo
 """
 import logging
+import os
 
 import numpy as np
 import torch
@@ -93,7 +94,7 @@ class BaseRunner(object):
             train_acc += pred.eq(target).cpu().float().sum().item()
             train_total += target.shape[0]
         acc = train_acc / train_total
-        logging.info("train epoch:{}  loss:{:.6f} acc:{:.5f}".format(epoch, np.mean(loss_list), acc))
+        logging.info("train epoch:{}  loss:{:.6f} acc:{:.6f}".format(epoch, np.mean(loss_list), acc))
         return acc, np.mean(loss_list)
 
     def test(self, model, loss_fn, data_loader, stage):
@@ -117,7 +118,7 @@ class BaseRunner(object):
 
         avg_loss = np.mean(loss_list)
         avg_acc = acc / total
-        logging.info("{} loss:{:.6f}, acc:{}".format(stage, avg_loss, avg_acc))
+        logging.info("{} loss:{:.6f}, acc:{:.6f}".format(stage, avg_loss, avg_acc))
         return avg_acc, avg_loss
 
     def fit(self, model, train_loader, val_loader, test_loader):
@@ -131,15 +132,12 @@ class BaseRunner(object):
         early_stop_cnt = 0
         train_loss_list = []
         val_loss_list = []  # Adding validation loss list
-        test_loss_list = []
 
         for epoch in range(self.epoch):
             train_acc, train_loss = self.train(epoch, model, loss_fn, optimizer, train_dataloader)
             val_acc, val_loss = self.test(model, loss_fn, val_dataloader, 'val')  # Using val_dataloader for validation
-            # test_acc, test_loss = test(model, loss_fn, test_dataloader, 'test')  # Test
             train_loss_list.append(train_loss)
             val_loss_list.append(val_loss)  # Adding validation loss
-            # test_loss_list.append(test_loss)
 
             if val_acc > best_acc:  # Using validation accuracy for early stopping and saving the best model
                 best_acc = val_acc
@@ -151,6 +149,7 @@ class BaseRunner(object):
             if early_stop_cnt > self.early_stop:
                 logging.info("Early stopping triggered.")
                 break
+            logging.info(os.linesep)
 
         # plot_learning_curve(train_loss_list, val_loss_list, test_loss_list)  # Plotting validation loss as well
 
@@ -159,4 +158,5 @@ class BaseRunner(object):
 
         # After training, get the test results
         final_test_acc, final_test_loss = self.test(model, loss_fn, test_dataloader, 'test')
-        logging.info("Final Test Accuracy: {:.5f}. Test Loss: {:.6f}".format(final_test_acc, final_test_loss))
+        logging.info(os.linesep + "Final Test Accuracy: {:.5f}. Test Loss: {:.6f}"
+                     .format(final_test_acc, final_test_loss))
