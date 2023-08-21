@@ -134,12 +134,20 @@ class BaseRunner(object):
         val_loss_list = []  # Adding validation loss list
 
         for epoch in range(self.epoch):
-            train_acc, train_loss = self.train(epoch, model, loss_fn, optimizer, train_dataloader)
-            val_acc, val_loss = self.test(model, loss_fn, val_dataloader, 'val')  # Using val_dataloader for validation
+            train_acc, train_loss = self.train(epoch,
+                                               model,
+                                               loss_fn,
+                                               optimizer,
+                                               train_dataloader)
+            val_acc, val_loss = self.test(model,
+                                          loss_fn,
+                                          val_dataloader,
+                                          'val')  # Using val_dataloader for validation
             train_loss_list.append(train_loss)
             val_loss_list.append(val_loss)  # Adding validation loss
 
-            if val_acc > best_acc:  # Using validation accuracy for early stopping and saving the best model
+            # Using validation accuracy for early stopping and saving the best model
+            if val_acc > best_acc:
                 best_acc = val_acc
                 # self.save_model(model, best_acc)
                 early_stop_cnt = 0
@@ -149,7 +157,6 @@ class BaseRunner(object):
             if early_stop_cnt > self.early_stop:
                 logging.info("Early stopping triggered.")
                 break
-            logging.info(os.linesep)
 
         # plot_learning_curve(train_loss_list, val_loss_list, test_loss_list)  # Plotting validation loss as well
 
@@ -157,6 +164,9 @@ class BaseRunner(object):
         logging.info("Best Validation Accuracy: {:.5f}".format(best_acc))
 
         # After training, get the test results
-        final_test_acc, final_test_loss = self.test(model, loss_fn, test_dataloader, 'test')
-        logging.info(os.linesep + "Final Test Accuracy: {:.5f}. Test Loss: {:.6f}"
+        final_test_acc, final_test_loss = self.test(model,
+                                                    loss_fn,
+                                                    test_dataloader,
+                                                    'test')
+        logging.info(os.linesep + "Final Test Accuracy: {:.5f}. Test Loss: {:.5f}"
                      .format(final_test_acc, final_test_loss))
