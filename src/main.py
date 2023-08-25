@@ -81,6 +81,7 @@ if __name__ == '__main__':
 
     # Args
     parser = argparse.ArgumentParser(description='')
+    parser.add_argument('--model_name', type=str, default=init_args.model)
     parser = parse_global_args(parser)
     parser = model_class.parse_model_args(parser)
     parser = loader_class.parse_data_args(parser)
