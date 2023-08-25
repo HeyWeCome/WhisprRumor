@@ -108,3 +108,7 @@ venv.bak/
 
 log
 embeddings
+
+*.bin
+
+*.pt
