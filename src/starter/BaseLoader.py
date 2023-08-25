@@ -12,7 +12,6 @@ import torch
 from utils import utils
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import train_test_split
-import config as config
 
 
 class BaseLoader(object):

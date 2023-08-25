@@ -55,22 +55,22 @@ def main():
 
     # Define model
     model = model_class(args).to(args.device)
-    logging.info('#params: {}'.format(model.count_variables()))
+    # logging.info('#params: {}'.format(model.count_variables()))
     logging.info(model)
 
     # Get train, val, test dataset
     loader = loader_class(args)
-    train_loader, val_loader, test_loader = loader.get_dataloader()
+    train_iter, test_iter, val_iter = loader.get_dataloader()
 
     # train
     runner = runner_class(args)
-    runner.fit(model, train_loader, val_loader, test_loader)
+    runner.fit(model, train_iter, val_iter, test_iter)
 
 
 if __name__ == '__main__':
     init_parser = argparse.ArgumentParser(description='Model')
-    init_parser.add_argument('--model', type=str, default='LSTM', help='Choose a model to run.')
-    init_parser.add_argument('--data_loader', type=str, default='BaseLoader', help='Choose a dataloader object.')
+    init_parser.add_argument('--model', type=str, default='BertBase', help='Choose a model to run.')
+    init_parser.add_argument('--data_loader', type=str, default='BertLoader', help='Choose a dataloader object.')
     init_parser.add_argument('--data_runner', type=str, default='BaseRunner', help='Choose a runner object.')
     init_args, init_extras = init_parser.parse_known_args()
     model_class = eval('{0}.{0}'.format(init_args.model))

@@ -195,3 +195,8 @@ def padding_truncating(train_tokens, maxlen):
         elif len(token) < maxlen:
             train_tokens[i] = [0] * (maxlen - len(token)) + token
     return train_tokens
+
+# Save the splits to respective files
+def save_to_file(filename, data):
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.writelines(data)

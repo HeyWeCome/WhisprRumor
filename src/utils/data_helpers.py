@@ -16,6 +16,7 @@ import os
 from sklearn.model_selection import train_test_split
 import collections
 import six
+from transformers import BertTokenizer
 
 
 class Vocab:
@@ -83,13 +84,45 @@ def cache(func):
     return wrapper
 
 
+def pad_sequence(sequences, batch_first=False, max_len=None, padding_value=0):
+    """
+    对一个List中的元素进行padding
+    Pad a list of variable length Tensors with ``padding_value``
+    a = torch.ones(25)
+    b = torch.ones(22)
+    c = torch.ones(15)
+    pad_sequence([a, b, c],max_len=None).size()
+    torch.Size([25, 3])
+        sequences:
+        batch_first: 是否把batch_size放到第一个维度
+        padding_value:
+        max_len :
+                当max_len = 50时，表示以某个固定长度对样本进行padding，多余的截掉；
+                当max_len=None是，表示以当前batch中最长样本的长度对其它进行padding；
+    Returns:
+    """
+    if max_len is None:
+        max_len = max([s.size(0) for s in sequences])
+    out_tensors = []
+    for tensor in sequences:
+        if tensor.size(0) < max_len:
+            tensor = torch.cat([tensor, torch.tensor([padding_value] * (max_len - tensor.size(0)))], dim=0)
+        else:
+            tensor = tensor[:max_len]
+        out_tensors.append(tensor)
+    out_tensors = torch.stack(out_tensors, dim=1)
+    if batch_first:
+        return out_tensors.transpose(0, 1)
+    return out_tensors
+
+
 class LoadSingleSentenceDataset:
     def __init__(self,
                  vocab_path='../../pretrain/bert_base_chinese/vocab.txt',
                  tokenizer=None,
                  batch_size=32,
                  max_sen_len=None,
-                 split_sep='\n',
+                 split_sep='\t',
                  max_position_embeddings=512,
                  pad_index=0,
                  is_sample_shuffle=True
@@ -145,7 +178,7 @@ class LoadSingleSentenceDataset:
 
         for raw_line in tqdm(raw_lines, ncols=80):
             fields = raw_line.rstrip("\n").split(self.split_sep)
-            sentence, length_label = fields[0], fields[1]
+            sentence, label = fields[1], fields[0]
 
             indexed_tokens = [self.CLS_IDX] + [self.vocab[token] for token in self.tokenizer(sentence)]
             if len(indexed_tokens) > self.max_position_embeddings - 1:
@@ -154,14 +187,59 @@ class LoadSingleSentenceDataset:
             indexed_tokens += [self.SEP_IDX]
 
             token_tensor = torch.tensor(indexed_tokens, dtype=torch.long)
-            length_label_tensor = torch.tensor(int(length_label), dtype=torch.long)
+            label_tensor = torch.tensor(int(label), dtype=torch.long)
 
             max_sequence_length = max(max_sequence_length, token_tensor.size(0))
-            processed_data.append((token_tensor, length_label_tensor))
+            processed_data.append((token_tensor, label_tensor))
 
         return processed_data, max_sequence_length
 
+    def load_train_val_test_data(self,
+                                 train_file_path=None,
+                                 val_file_path=None,
+                                 test_file_path=None,
+                                 only_test=False):
+        postfix = str(self.max_sen_len)
+        test_data, _ = self.data_process(filepath=test_file_path, postfix=postfix)
+        test_iter = DataLoader(test_data, batch_size=self.batch_size,
+                               shuffle=False, collate_fn=self.generate_batch)
+        if only_test:
+            return test_iter
+        train_data, max_sen_len = self.data_process(filepath=train_file_path,
+                                                    postfix=postfix)  # 得到处理好的所有样本
+        if self.max_sen_len == 'same':
+            self.max_sen_len = max_sen_len
+        val_data, _ = self.data_process(filepath=val_file_path,
+                                        postfix=postfix)
+        train_iter = DataLoader(train_data, batch_size=self.batch_size,  # 构造DataLoader
+                                shuffle=self.is_sample_shuffle, collate_fn=self.generate_batch)
+        val_iter = DataLoader(val_data, batch_size=self.batch_size,
+                              shuffle=False, collate_fn=self.generate_batch)
+        return train_iter, test_iter, val_iter
+
+    def generate_batch(self, data_batch):
+        batch_sentence, batch_label = [], []
+        for (sen, label) in data_batch:  # 开始对一个batch中的每一个样本进行处理。
+            batch_sentence.append(sen)
+            batch_label.append(label)
+        batch_sentence = pad_sequence(batch_sentence,  # [batch_size,max_len]
+                                      padding_value=self.PAD_IDX,
+                                      batch_first=False,
+                                      max_len=self.max_sen_len)
+        batch_label = torch.tensor(batch_label, dtype=torch.long)
+        return batch_sentence, batch_label
+
 
 if __name__ == '__main__':
-    loader = LoadSingleSentenceDataset()
-    print(loader.vocab.itos)
+    bert_tokenize = BertTokenizer.from_pretrained("../../pretrain/bert_base_chinese/").tokenize
+    loader = LoadSingleSentenceDataset(tokenizer=bert_tokenize)
+
+    train_data, max_sen_len = loader.data_process(filepath="../../data/weibo/all_data.txt", postfix=None)  # 得到处理好的所有样本
+
+    print(train_data[0][1].item())
+
+    # raw_lines = open("../../data/weibo/all_data.txt", encoding="utf8").readlines()
+    # field = raw_lines[0].rstrip("\n").split("\t")
+    # sentence, label = field[1], field[0]
+    # print(bert_tokenize(sentence))
+    # print(label)
