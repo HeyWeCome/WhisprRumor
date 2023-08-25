@@ -141,8 +141,8 @@ class BaseRunner(object):
 
     def inference(self, model, test_iter):
         model.eval()
-        acc = self.evaluate(test_iter, model, device=self.device, PAD_IDX=self.pad_idx)
-        logging.info(f"Acc on test: {acc:.3f}")
+        acc, f1 = self.evaluate(test_iter, model, device=self.device, PAD_IDX=self.pad_idx)
+        logging.info('Result in Test dataset: ' f"F1: {f1:.3f}, " f"Accuracy on val {acc:.3f}")
 
     def evaluate(self, dataloader, model, device, PAD_IDX):
         model.eval()
