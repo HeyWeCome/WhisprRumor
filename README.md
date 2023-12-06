@@ -1,2 +1,2 @@
 # WhisprRumor
-The most wonderful project for rumor detection Study.
+The most wonderful project for rumor diffusion Study.
